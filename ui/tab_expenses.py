@@ -14,28 +14,28 @@ def render_tab1(sel_month, sel_year, month_idx, days_in_month):
     needs: v1_amt, v2_amt, v1_date, v2_date, v1_items, v2_items,
     num_bills, has_stationery, cash_total.
     """
-    # Mode selector
     st.markdown('<p class="sec-title"><span class="sec-title-icon">⚙️</span>Voucher Mode</p>', unsafe_allow_html=True)
+
     num_bills = st.radio(
         "Voucher mode",
-        [1, 2],
+        options=[1, 2],
         format_func=lambda x: "3 Vouchers — 1 Consumable Bill" if x == 1 else "4 Vouchers — 2 Bills",
-        horizontal=True,
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        key=f"num_bills_{_month_key(sel_month, sel_year)}",
     )
 
     has_stationery = False
     if num_bills == 2:
-        st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
-        bill2_type = st.radio("Bill 2 type", ["Consumable", "Stationery"],
-                              horizontal=True, label_visibility="collapsed")
-        has_stationery = (bill2_type == "Stationery")
+        has_stationery = st.checkbox(
+            "Bill 2 is a Stationery bill (otherwise it's a second Consumable bill)",
+            key=f"has_stationery_{_month_key(sel_month, sel_year)}",
+        )
 
-    st.markdown("<hr style='margin:1rem 0'>", unsafe_allow_html=True)
-
-    # Default dates for date pickers
-    _default_d1 = datetime.date(int(sel_year), month_idx, 25)
-    _default_d2 = datetime.date(int(sel_year), month_idx, 26)
+    # Default dates for date pickers.
+    # Consumable bills must be dated within the imprest month itself
+    # (e.g. generating for July requires bill dates in July).
+    _default_d1 = datetime.date(int(sel_year), month_idx, min(25, days_in_month))
+    _default_d2 = datetime.date(int(sel_year), month_idx, min(26, days_in_month))
     _min_date   = datetime.date(int(sel_year), month_idx, 1)
     _max_date   = datetime.date(int(sel_year), month_idx, days_in_month)
 
@@ -45,17 +45,20 @@ def render_tab1(sel_month, sel_year, month_idx, days_in_month):
     # showing up (unreset) when switching to another month.
     _mk = _month_key(sel_month, sel_year)
 
+    # Explicit per-key defaults (belt-and-braces vs relying on number_input's
+    # implicit `value=` handling, which some Streamlit versions/setups don't
+    # reliably apply once a key has ever been touched elsewhere in the app).
     _v1a_key, _v1d_key, _v1i_key = f"v1a_{_mk}", f"v1d_{_mk}", f"v1i_{_mk}"
     _v2a_key, _v2d_key, _v2i_key = f"v2a_{_mk}", f"v2d_{_mk}", f"v2i_{_mk}"
     init_default(_v1a_key, 0); init_default(_v1d_key, _default_d1); init_default(_v1i_key, 0)
-    init_default(_v2a_key, 0);    init_default(_v2d_key, _default_d2); init_default(_v2i_key, 0)
+    init_default(_v2a_key, 0); init_default(_v2d_key, _default_d2); init_default(_v2i_key, 0)
 
     if num_bills == 1:
         # 3-Voucher: single bill, full width — Amount | Date picker | Items
         st.markdown('<p class="sec-title"><span class="sec-title-icon">📋</span>Bill 1 — Consumable</p>', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3, gap="medium")
         with c1:
-            v1_amt   = st.number_input("Amount (Rs.)", min_value=0, step=10, key=_v1a_key)
+            v1_amt   = st.number_input("Amount (Rs.)", min_value=0, step=1, key=_v1a_key)
         with c2:
             v1_date_obj = st.date_input("Date", min_value=_min_date, max_value=_max_date, key=_v1d_key)
             v1_date = v1_date_obj.strftime("%d/%m/%Y")
@@ -79,7 +82,7 @@ def render_tab1(sel_month, sel_year, month_idx, days_in_month):
 
         with col_b1:
             st.markdown('<p class="sec-title"><span class="sec-title-icon">📋</span>Bill 1 — Consumable</p>', unsafe_allow_html=True)
-            v1_amt      = st.number_input("Amount (Rs.)", min_value=0, step=10, key=_v1a_key)
+            v1_amt      = st.number_input("Amount (Rs.)", min_value=0, step=1, key=_v1a_key)
             v1_date_obj = st.date_input("Date", min_value=_min_date, max_value=_max_date, key=_v1d_key)
             v1_date     = v1_date_obj.strftime("%d/%m/%Y")
             v1_items    = st.number_input("Number of Items", min_value=0, step=1, key=_v1i_key)
@@ -95,7 +98,7 @@ def render_tab1(sel_month, sel_year, month_idx, days_in_month):
 
         with col_b2:
             st.markdown(f'''<p class="sec-title"><span class="sec-title-icon">📋</span>Bill 2 — {label2}</p>''', unsafe_allow_html=True)
-            v2_amt      = st.number_input("Amount (Rs.)", min_value=0, step=10, key=_v2a_key)
+            v2_amt      = st.number_input("Amount (Rs.)", min_value=0, step=1, key=_v2a_key)
             v2_date_obj = st.date_input("Date", min_value=_min_date, max_value=_max_date, key=_v2d_key)
             v2_date     = v2_date_obj.strftime("%d/%m/%Y")
             v2_items    = st.number_input("Number of Items", min_value=0, step=1, key=_v2i_key)
@@ -108,21 +111,16 @@ def render_tab1(sel_month, sel_year, month_idx, days_in_month):
                 </div>''',
                 unsafe_allow_html=True
             )
-            v2_amt = int(v2_amt)
 
-    cash_total     = int(v1_amt) + int(v2_amt)
-    cash_total_disp = cash_total
-    st.markdown(
-        f'''<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;
-        padding:0.65rem 1.2rem;margin-top:1rem;display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:0.78rem;font-weight:700;color:#1E40AF;text-transform:uppercase;letter-spacing:0.5px">
-            Combined Bill Total (excl. Labour)</span>
-        <span style="font-size:1.5rem;font-weight:800;color:#1B4DB0">₹{cash_total_disp:,}</span>
-        </div>''',
-        unsafe_allow_html=True
-    )
+    cash_total = int(v1_amt) + int(v2_amt)
 
-
+    st.markdown(f"""
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;
+    padding:0.7rem 1.1rem;margin-top:1rem;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:0.8rem;font-weight:700;color:#1B4DB0;text-transform:uppercase;letter-spacing:0.5px">Combined Bill Total (excl. labour)</span>
+        <span style="font-size:1.3rem;font-weight:800;color:#1B4DB0">₹{cash_total:,}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     return {
         "v1_amt": v1_amt, "v2_amt": v2_amt,

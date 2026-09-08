@@ -82,7 +82,7 @@ if errorlevel 1 (
     echo [WARNING] streamlit is not installed.
     echo Installing dependencies from requirements.txt...
     echo.
-    python -m pip install -r requirements.txt
+    python -m pip install -r Requirements.txt
     echo.
 )
 
@@ -91,7 +91,7 @@ if errorlevel 1 (
     echo [WARNING] python-docx is not installed.
     echo Installing dependencies from requirements.txt...
     echo.
-    python -m pip install -r requirements.txt
+    python -m pip install -r Requirements.txt
     echo.
 )
 

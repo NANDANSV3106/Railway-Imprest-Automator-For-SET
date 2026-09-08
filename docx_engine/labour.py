@@ -4,6 +4,7 @@ DEVAMMA. Leave days are randomly assigned with no overlap between workers.
 """
 import docx
 import random
+from io import BytesIO
 
 from core.dates import get_days_in_month
 from core.num_to_words import amount_in_words_title
@@ -151,5 +152,3 @@ def generate_labour_annexure(template_path, month, year,
     doc.save(bio)
     bio.seek(0)
     return bio
-
-

@@ -5,9 +5,8 @@ Centralized here so a template edit only needs updating in one place.
 """
 import docx
 
-
 ANNEX1_ANCHORS = [
-    "No. Station Imprest", "Sub : Recoupment", "Vr. No.",
+    "No. Station Imprest", "Sub: Recoupment", "Vr. No.",
     "Accepted for Rs.", "For the month of", "Imprest Account Of",
     "Opening Balance", "Closing Balance", "Sanctioned Amount",
 ]
@@ -38,11 +37,17 @@ def validate_template(template_path, required_anchors, min_tables=1):
             for cell in row.cells:
                 all_text += "\n" + cell.text
 
-    missing = [a for a in required_anchors if a not in all_text]
+    # Normalize whitespace so minor spacing/formatting differences in the
+    # actual .docx (extra spaces, tabs, line breaks) don't cause
+    # false-positive failures on an otherwise-correct template.
+    normalized_text = " ".join(all_text.split())
+    missing = [
+        a for a in required_anchors
+        if " ".join(a.split()) not in normalized_text
+    ]
     if missing:
         raise RuntimeError(
             f"Template '{template_path}' is missing expected text: {', '.join(missing)}. "
             "The template may have been edited — the fill logic needs matching updates."
         )
     return doc
-
