@@ -2,7 +2,7 @@
 Sidebar: brand header, month/year period selector, active-period card.
 """
 import streamlit as st
-
+import datetime
 from config import MONTHS
 from core.dates import get_days_in_month
 
@@ -19,9 +19,22 @@ def render_sidebar():
         """, unsafe_allow_html=True)
     
         st.markdown('<span class="sb-section-label">Billing Period</span>', unsafe_allow_html=True)
-        sel_month = st.selectbox("Month", MONTHS, index=6, label_visibility="collapsed")
-        sel_year  = st.selectbox("Year", ["2025","2026","2027","2028"], index=1, label_visibility="collapsed")
-    
+        _today = datetime.date.today()
+        SUBMISSION_CUTOFF_DAY = 15
+        if _today.day <= SUBMISSION_CUTOFF_DAY:
+            _default_month_idx = _today.month - 2      # previous month (0-based index)
+            _default_year = _today.year
+            if _default_month_idx < 0:                 # January -> December of last year
+                _default_month_idx = 11
+                _default_year -= 1
+        else:
+            _default_month_idx = _today.month - 1      # current month (0-based index)
+            _default_year = _today.year
+
+        _years = [str(y) for y in range(_today.year - 1, _today.year + 3)]
+
+        sel_month = st.selectbox("Month", MONTHS, index=_default_month_idx, label_visibility="collapsed")
+        sel_year = st.selectbox("Year", _years, index=_years.index(str(_default_year)), label_visibility="collapsed")
         days_in_month, month_idx = get_days_in_month(sel_month, sel_year)
     
         st.markdown(f"""
