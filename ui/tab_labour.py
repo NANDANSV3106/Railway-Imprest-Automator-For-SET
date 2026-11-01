@@ -107,13 +107,7 @@ def render_tab2(sel_month, sel_year, days_in_month):
         if tha_lv > 0 or dev_lv > 0:
             tha_days_str = ", ".join(map(str, sorted(tha_leave_set))) if tha_lv else "None"
             dev_days_str = ", ".join(map(str, sorted(dev_leave_set))) if dev_lv else "None"
-            st.markdown(f"""
-            <div class="leave-banner">
-                ✅ <strong>Leave plan confirmed — no overlaps</strong><br>
-                &nbsp;&nbsp;THAYAMMA off on: <strong>Day(s) {tha_days_str}</strong><br>
-                &nbsp;&nbsp;DEVAMMA off on: <strong>Day(s) {dev_days_str}</strong>
-            </div>
-            """, unsafe_allow_html=True)
+          
 
 
 
